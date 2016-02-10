@@ -22,6 +22,7 @@ let rec contract (e:ePL_expr): ePL_expr =
         let () = y_tinfo_pp "inside \\ " in
         begin
           match arg with
+          | BoolConst v -> BoolConst (not v)
           | _ -> failwith ("unable to contract for "^(string_of_ePL e))
         end
       | _ -> failwith ("illegal unary op "^op)
@@ -59,6 +60,7 @@ let rec contract (e:ePL_expr): ePL_expr =
           (* please complete *)
           (* TODO: disjunction of two boolean values *)
           match arg1,arg2 with
+          | BoolConst v1,BoolConst v2 -> BoolConst (v1||v2)
           | _,_ -> failwith ("unable to contract"^(string_of_ePL e))
         end
       | "&" ->
@@ -66,6 +68,7 @@ let rec contract (e:ePL_expr): ePL_expr =
           (* please complete *)
           (* TODO: conjunction of two boolean values *)
           match arg1,arg2 with
+          | BoolConst v1,BoolConst v2 -> BoolConst (v1&&v2)
           | _,_ -> failwith ("unable to contract"^(string_of_ePL e))
         end
       | "<" ->
@@ -73,6 +76,7 @@ let rec contract (e:ePL_expr): ePL_expr =
         (* TOD:O less than operator *)
         begin
           match arg1,arg2 with
+          | IntConst v1,IntConst v2 -> BoolConst (v1<v2)
           | _,_ -> failwith ("unable to contract"^(string_of_ePL e))
         end
       | ">" ->
@@ -80,6 +84,7 @@ let rec contract (e:ePL_expr): ePL_expr =
         (* please complete *)
         (* TODO: greater than operator *)
           match arg1,arg2 with
+          | IntConst v1,IntConst v2 -> BoolConst (v1<v2)
           | _,_ -> failwith ("unable to contract"^(string_of_ePL e))
         end
       | "=" ->
@@ -88,6 +93,7 @@ let rec contract (e:ePL_expr): ePL_expr =
         begin
           match arg1,arg2 with
           | IntConst v1,IntConst v2 -> BoolConst (v1=v2)
+          | BoolConst v1,BoolConst v2 -> BoolConst (v1=v2)
           | _,_ -> failwith ("unable to contract"^(string_of_ePL e))
         end
       | _ -> failwith ("illegal binary op "^op)
@@ -173,7 +179,7 @@ let rec type_check (e:ePL_expr) (t:ePL_type) : bool =
       | "\\",BoolType
         ->
         (* TODO : complete type checking here *)
-        failwith "to be completed"
+        type_check arg BoolType
       | _,_
         -> false
     end
@@ -184,13 +190,13 @@ let rec type_check (e:ePL_expr) (t:ePL_type) : bool =
         (type_check arg1 IntType) && (type_check arg2 IntType)
       | "<",BoolType | ">",BoolType ->
         (* TODO : complete type checking here *)
-        failwith "to be completed"
+        (type_check arg1 IntType) && (type_check arg2 IntType)
       | "=",BoolType ->
         (* TODO : complete polymorphic type checking here *)
-        failwith "to be completed"
+        ((type_check arg1 IntType) && (type_check arg2 IntType)) || ((type_check arg1 BoolType) && (type_check arg2 BoolType))
       | "|",BoolType | "&",BoolType ->
         (* TODO : complete type checking here *)
-        failwith "to be completed"
+        (type_check arg1 BoolType) && (type_check arg2 BoolType)
       | _,_ -> false
     end
   | _, _ -> false
@@ -212,7 +218,8 @@ let type_infer (e:ePL_expr) : ePL_type option =
         else None
       | "\\" ->
         (* TODO : complete type inference here *)
-        failwith "to be completed"
+        if (x_add type_check arg BoolType) then Some BoolType
+        else None
       | _ -> None
     end
   | BinaryPrimApp (op,arg1,arg2) ->
@@ -224,13 +231,19 @@ let type_infer (e:ePL_expr) : ePL_type option =
         else None
       | "<" | ">" ->
         (* TODO : complete type inference here *)
-        failwith "to be completed"
+        if (x_add type_check arg1 IntType) && (x_add type_check arg2 IntType)
+        then Some BoolType
+        else None
       | "=" ->
         (* TODO : complete type inference here *)
-        failwith "to be completed"
+        if (x_add type_check arg1 IntType) && (x_add type_check arg2 IntType) then Some BoolType
+        else if (x_add type_check arg1 BoolType) && (x_add type_check arg2 BoolType) then Some BoolType
+        else None
       | "&" | "|" ->
         (* TODO : complete type inference here *)
-        failwith "to be completed"
+        if (x_add type_check arg1 BoolType) && (x_add type_check arg2 BoolType)
+        then Some BoolType
+        else None
       | _ -> None
     end
 
